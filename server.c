@@ -4,77 +4,144 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#define BUFSZ 1024
+int main(int argc, char *argv[])
+{
+    assert(argc == 5);
 
-void usage(int argc, char **argv) {
-    printf("usage: %s <v4|v6> <server port>\n", argv[0]);
-    printf("example: %s v4 51511\n", argv[0]);
-    exit(EXIT_FAILURE);
-}
+    FILE *arquivo;
 
-int main(int argc, char **argv) {
-    if (argc < 3) {
-        usage(argc, argv);
+    // Abre o arquivo em modo de leitura ("r")
+    arquivo = fopen(argv[4], "r");
+
+    // Verifica se o arquivo foi aberto com sucesso
+    if (arquivo == NULL)
+    {
+        printf("Erro ao abrir o arquivo.\n");
+        return 1;
+    }
+
+    int gabarito[4][4];
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            fscanf(arquivo, "%d", &gabarito[i][j]);
+        }
     }
 
     struct sockaddr_storage storage;
-    if (0 != server_sockaddr_init(argv[1], argv[2], &storage)) {
-        usage(argc, argv);
-    }
+    server_sockaddr_init(argv[1], argv[2], &storage);
 
     int s;
     s = socket(storage.ss_family, SOCK_STREAM, 0);
-    if (s == -1) {
+    if (s == -1)
+    {
         logexit("socket");
     }
 
+    // Reinicialização de porta
     int enable = 1;
-    if (0 != setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int))) {
+    if (0 != setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)))
+    {
         logexit("setsockopt");
     }
 
+    // Interface para rodar IPv4 e IPv6
     struct sockaddr *addr = (struct sockaddr *)(&storage);
-    if (0 != bind(s, addr, sizeof(storage))) {
+    if (0 != bind(s, addr, sizeof(storage)))
+    {
         logexit("bind");
     }
 
-    if (0 != listen(s, 10)) {
+    if (0 != listen(s, 10))
+    {
         logexit("listen");
     }
 
-    char addrstr[BUFSZ];
-    addrtostr(addr, addrstr, BUFSZ);
-    printf("bound to %s, waiting connections\n", addrstr);
-
-    while (1) {
+    while (1)
+    {
         struct sockaddr_storage cstorage;
         struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
         socklen_t caddrlen = sizeof(cstorage);
 
         int csock = accept(s, caddr, &caddrlen);
-        if (csock == -1) {
+        if (csock == -1)
+        {
             logexit("accept");
         }
 
-        char caddrstr[BUFSZ];
-        addrtostr(caddr, caddrstr, BUFSZ);
-        printf("[log] connection from %s\n", caddrstr);
+        // Cliente conectou
+        printf("client connected\n");
 
-        char buf[BUFSZ];
-        memset(buf, 0, BUFSZ);
-        size_t count = recv(csock, buf, BUFSZ - 1, 0);
-        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
+        // Mensagem
+        struct action msg;
 
-        sprintf(buf, "remote endpoint: %.1000s\n", caddrstr);
-        count = send(csock, buf, strlen(buf) + 1, 0);
-        if (count != strlen(buf) + 1) {
+        memset(&msg, 0, sizeof(struct action));
+        size_t count = recv(csock, &msg, sizeof(struct action), 0);
+
+        if (msg.type == START)
+        {
+            msg.type = STATE;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    msg.board[i][j] = OCULTA;
+                }
+            }
+        }
+        else if (msg.type == REVEAL)
+        {
+            int i = msg.coordinates[0], j = msg.coordinates[1];
+            msg.type = STATE;
+            if (gabarito[i][j] == BOMBA)
+            {
+                msg.type = GAME_OVER;
+            }
+            else // (gabarito[i][j] == OCULTA)
+            {
+                msg.board[i][j] = gabarito[i][j];
+            }
+        }
+        else if (msg.type == FLAG)
+        {
+            int i = msg.coordinates[0], j = msg.coordinates[1];
+            msg.type = STATE;
+            msg.board[i][j] = FLAG;
+        }
+        else if (msg.type == REMOVE_FLAG)
+        {
+            int i = msg.coordinates[0], j = msg.coordinates[1];
+            msg.type = STATE;
+            msg.board[i][j] = OCULTA;
+        }
+        else if (msg.type == RESET)
+        {
+            msg.type = STATE;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    msg.board[i][j] = OCULTA;
+                }
+            }
+        }
+        else if (msg.type == EXIT)
+        {
+            printf("client disconnected\n");
+            close(csock);
+        }
+
+        count = send(csock, &msg, sizeof(struct action), 0);
+        if (count != sizeof(struct action))
+        {
             logexit("send");
         }
-        close(csock);
     }
 
     exit(EXIT_SUCCESS);

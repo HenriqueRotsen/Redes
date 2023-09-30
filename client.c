@@ -9,13 +9,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-void usage(int argc, char *argv)
-{
-	printf("usage: %s <server IP> <server port>\n", argv[0]);
-	printf("example: %s 127.0.0.1 51511\n", argv[0]);
-	exit(EXIT_FAILURE);
-}
-
 char convert(int n)
 {
 	char c;
@@ -29,31 +22,24 @@ char convert(int n)
 	}
 	else if (n == CEL_FLAG)
 	{
-		c == '>';
+		c = '>';
 	}
 	else if (n == SEM_BOMA_VIZ)
 	{
-		c == 0;
+		c = 0;
 	}
 	else
 	{
-		c == (char)n;
+		c = (char)n;
 	}
 	return c;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc < 3)
-	{
-		usage(argc, argv);
-	}
 
 	struct sockaddr_storage storage;
-	if (0 != addrparse(argv[1], argv[2], &storage))
-	{
-		usage(argc, argv);
-	}
+	addrparse(argv[1], argv[2], &storage);
 
 	int s;
 	s = socket(storage.ss_family, SOCK_STREAM, 0);
@@ -69,10 +55,12 @@ int main(int argc, char **argv)
 
 	// Mensagem
 	struct action msg;
-	char *aux;
+	char aux[100];
 
 	memset(&msg, 0, sizeof(struct action));
-	scanf("%s", &aux);
+	memset(&aux, 0, 100);
+
+	scanf("%s", aux);
 	if (strcmp(aux, "start") == 0)
 	{
 		msg.type = START;
@@ -97,10 +85,11 @@ int main(int argc, char **argv)
 	memset(&msg, 0, sizeof(struct action));
 
 	// Deu start
+
 	while (1)
 	{
 		// Evitar erros no aux
-		memset(aux, 0, sizeof(char *));
+		memset(&aux, 0, 100);
 
 		count = recv(s, &msg, sizeof(struct action), 0);
 		if (count == 0) // Teste para ver se a conexão acabou
@@ -129,7 +118,11 @@ int main(int argc, char **argv)
 		}
 
 		// Vê as próximas ações do jogador
-		scanf("%s", &aux);
+		char tipo[20];
+		fgets(aux, sizeof(aux), stdin);
+		sscanf(aux, "%6s", tipo);
+
+		printf("%6s", tipo);
 		if (strcmp(aux, "reveal") == 0)
 		{
 			msg.type = REVEAL;
