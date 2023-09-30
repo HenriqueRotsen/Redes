@@ -1,9 +1,7 @@
+#include "common.h"
 #include <inttypes.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
-#include <arpa/inet.h>
 
 void logexit(const char *msg) {
 	perror(msg);
@@ -97,4 +95,30 @@ int server_sockaddr_init(const char *proto, const char *portstr,
     } else {
         return -1;
     }
+}
+
+char convert(int n)
+{
+	char c;
+	if (n == BOMBA)
+	{
+		c = '*';
+	}
+	else if (n == OCULTA)
+	{
+		c = '-';
+	}
+	else if (n == CEL_FLAG)
+	{
+		c = '>';
+	}
+	else if (n == SEM_BOMA_VIZ)
+	{
+		c = '0';
+	}
+	else
+	{
+		c = n + '0';
+	}
+	return c;
 }

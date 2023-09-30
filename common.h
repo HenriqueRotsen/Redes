@@ -20,6 +20,7 @@
 #define WIN 6
 #define EXIT 7
 #define GAME_OVER 8
+#define ERROR 9
 
 struct action
 {
@@ -37,3 +38,5 @@ void addrtostr(const struct sockaddr *addr, char *str, size_t strsize);
 
 int server_sockaddr_init(const char *proto, const char *portstr,
                          struct sockaddr_storage *storage);
+
+char convert(int n);

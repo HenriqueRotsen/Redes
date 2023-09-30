@@ -1,7 +1,6 @@
 #include "common.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
@@ -30,8 +29,17 @@ int main(int argc, char *argv[])
     {
         for (int j = 0; j < 4; j++)
         {
-            fscanf(arquivo, "%d", &gabarito[i][j]);
+            fscanf(arquivo, "%d,", &gabarito[i][j]);
         }
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            printf("%c\t\t", convert(gabarito[i][j]));
+        }
+        printf("\n");
     }
 
     struct sockaddr_storage storage;
@@ -63,23 +71,24 @@ int main(int argc, char *argv[])
         logexit("listen");
     }
 
+    struct sockaddr_storage cstorage;
+    struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
+    socklen_t caddrlen = sizeof(cstorage);
+
+    int csock = accept(s, caddr, &caddrlen);
+    if (csock == -1)
+    {
+        logexit("accept");
+    }
+
+    // Cliente conectou
+    printf("client connected\n");
+
+    // Mensagem
+    struct action msg;
+
     while (1)
     {
-        struct sockaddr_storage cstorage;
-        struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
-        socklen_t caddrlen = sizeof(cstorage);
-
-        int csock = accept(s, caddr, &caddrlen);
-        if (csock == -1)
-        {
-            logexit("accept");
-        }
-
-        // Cliente conectou
-        printf("client connected\n");
-
-        // Mensagem
-        struct action msg;
 
         memset(&msg, 0, sizeof(struct action));
         size_t count = recv(csock, &msg, sizeof(struct action), 0);
@@ -98,13 +107,33 @@ int main(int argc, char *argv[])
         else if (msg.type == REVEAL)
         {
             int i = msg.coordinates[0], j = msg.coordinates[1];
-            msg.type = STATE;
+            int cont = 0;
+            msg.type = WIN;
             if (gabarito[i][j] == BOMBA)
             {
                 msg.type = GAME_OVER;
+                for (int k = 0; k < 4; k++)
+                {
+                    for (int l = 0; l < 4; l++)
+                    {
+                        msg.board[k][l] = gabarito[k][l];
+                    }
+                }
             }
-            else // (gabarito[i][j] == OCULTA)
+            else
             {
+                // ver se ganhou
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        if (msg.board[i][j] == OCULTA)
+                        {
+                            cont++;
+                            
+                        }
+                    }
+                }
                 msg.board[i][j] = gabarito[i][j];
             }
         }
@@ -112,7 +141,7 @@ int main(int argc, char *argv[])
         {
             int i = msg.coordinates[0], j = msg.coordinates[1];
             msg.type = STATE;
-            msg.board[i][j] = FLAG;
+            msg.board[i][j] = CEL_FLAG;
         }
         else if (msg.type == REMOVE_FLAG)
         {
@@ -122,6 +151,7 @@ int main(int argc, char *argv[])
         }
         else if (msg.type == RESET)
         {
+            printf("starting new game\n");
             msg.type = STATE;
             for (int i = 0; i < 4; i++)
             {
@@ -135,6 +165,7 @@ int main(int argc, char *argv[])
         {
             printf("client disconnected\n");
             close(csock);
+            break;
         }
 
         count = send(csock, &msg, sizeof(struct action), 0);
@@ -144,5 +175,6 @@ int main(int argc, char *argv[])
         }
     }
 
+    fclose(arquivo);
     exit(EXIT_SUCCESS);
 }

@@ -1,39 +1,11 @@
 #include "common.h"
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
-
-char convert(int n)
-{
-	char c;
-	if (n == BOMBA)
-	{
-		c = '*';
-	}
-	else if (n == OCULTA)
-	{
-		c = '-';
-	}
-	else if (n == CEL_FLAG)
-	{
-		c = '>';
-	}
-	else if (n == SEM_BOMA_VIZ)
-	{
-		c = 0;
-	}
-	else
-	{
-		c = (char)n;
-	}
-	return c;
-}
 
 int main(int argc, char **argv)
 {
@@ -85,7 +57,6 @@ int main(int argc, char **argv)
 	memset(&msg, 0, sizeof(struct action));
 
 	// Deu start
-
 	while (1)
 	{
 		// Evitar erros no aux
@@ -97,137 +68,141 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		// Vê se ganhou ou perdeu
+		// Vê se ganhou
 		if (msg.type == WIN)
 		{
 			printf("YOU WIN!\n");
+			// Mostre o jogo atualizado
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					printf("%c\t\t", convert(msg.board[i][j]));
+				}
+				printf("\n");
+			}
+			break;
 		}
-		if (msg.type == GAME_OVER)
+		// Vê se perdeu
+		else if (msg.type == GAME_OVER)
 		{
 			printf("GAME OVER!\n");
-		}
-
-		// Mostre o jogo atualizado
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
+			// Mostre o jogo atualizado
+			for (int i = 0; i < 4; i++)
 			{
-				printf("%c\t\t", convert(msg.board[i][j]));
+				for (int j = 0; j < 4; j++)
+				{
+					printf("%c\t\t", convert(msg.board[i][j]));
+				}
+				printf("\n");
 			}
-			printf("\n");
+			break;
+		}
+		else if (msg.type != ERROR)
+		{
+			// Mostre o jogo atualizado
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					printf("%c\t\t", convert(msg.board[i][j]));
+				}
+				printf("\n");
+			}
 		}
 
 		// Vê as próximas ações do jogador
-		char tipo[20];
-		fgets(aux, sizeof(aux), stdin);
-		sscanf(aux, "%6s", tipo);
-
-		printf("%6s", tipo);
+		memset(&aux, 0, 100);
+		scanf("%s", aux);
 		if (strcmp(aux, "reveal") == 0)
 		{
 			msg.type = REVEAL;
 			int i, j;
-
 			scanf("%d,%d", &i, &j);
 			if (0 <= i && i <= 3 && 0 <= j && j <= 3)
 			{
-				if (msg.board[i][j] != '-')
+				if (convert(msg.board[i][j]) == '-')
 				{
 					msg.coordinates[0] = i;
 					msg.coordinates[1] = j;
-					size_t count = send(s, &msg, sizeof(struct action), 0);
-					if (count != sizeof(struct action))
-					{
-						logexit("send");
-					}
 				}
 				else
 				{
 					printf("error: cell already revealed\n");
+					msg.type = ERROR;
 				}
 			}
 			else
 			{
 				printf("error: invalid cell\n");
+				msg.type = ERROR;
 			}
 		}
 		else if (strcmp(aux, "flag") == 0)
 		{
 			msg.type = FLAG;
 			int i, j;
-
 			scanf("%d,%d", &i, &j);
 			if (0 <= i && i <= 3 && 0 <= j && j <= 3)
 			{
-				if (msg.board[i][j] != '-')
+				if (convert(msg.board[i][j]) == '-')
 				{
-					if (msg.board[i][j] != '>')
-					{
-						msg.coordinates[0] = i;
-						msg.coordinates[1] = j;
-						size_t count = send(s, &msg, sizeof(struct action), 0);
-						if (count != sizeof(struct action))
-						{
-							logexit("send");
-						}
-					}
-					else
-					{
-						printf("error: cell already has a flag\n");
-					}
+					msg.coordinates[0] = i;
+					msg.coordinates[1] = j;
 				}
 				else
 				{
-					printf("error: cannot insert flag in revealed cell\n");
+					if (convert(msg.board[i][j]) == '>')
+					{
+						printf("error: cell already has a flag\n");
+						msg.type = ERROR;
+					}
+					else
+					{
+						printf("error: cannot insert flag in revealed cell\n");
+						msg.type = ERROR;
+					}
 				}
 			}
 			else
 			{
 				printf("error: invalid cell\n");
+				msg.type = ERROR;
 			}
 		}
 		else if (strcmp(aux, "remove_flag") == 0)
 		{
 			msg.type = REMOVE_FLAG;
 			int i, j;
-
 			scanf("%d,%d", &i, &j);
 			if (0 <= i && i <= 3 && 0 <= j && j <= 3)
 			{
 				msg.coordinates[0] = i;
 				msg.coordinates[1] = j;
-				size_t count = send(s, &msg, sizeof(struct action), 0);
-				if (count != sizeof(struct action))
-				{
-					logexit("send");
-				}
 			}
 			else
 			{
 				printf("error: invalid cell\n");
+				msg.type = ERROR;
 			}
 		}
 		else if (strcmp(aux, "reset") == 0)
 		{
 			msg.type = RESET;
-			size_t count = send(s, &msg, sizeof(struct action), 0);
-			if (count != sizeof(struct action))
-			{
-				logexit("send");
-			}
 		}
 		else if (strcmp(aux, "exit") == 0)
 		{
 			msg.type = EXIT;
-			size_t count = send(s, &msg, sizeof(struct action), 0);
-			if (count != sizeof(struct action))
-			{
-				logexit("send");
-			}
 		}
 		else
 		{
 			printf("error: command not found\n");
+			msg.type = ERROR;
+		}
+		size_t count = send(s, &msg, sizeof(struct action), 0);
+		if (count != sizeof(struct action))
+		{
+			logexit("send");
 		}
 	}
 	close(s);
