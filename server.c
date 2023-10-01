@@ -75,104 +75,112 @@ int main(int argc, char *argv[])
     struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
     socklen_t caddrlen = sizeof(cstorage);
 
-    int csock = accept(s, caddr, &caddrlen);
-    if (csock == -1)
-    {
-        logexit("accept");
-    }
-
-    // Cliente conectou
-    printf("client connected\n");
-
-    // Mensagem
-    struct action msg;
-
     while (1)
     {
-
-        memset(&msg, 0, sizeof(struct action));
-        size_t count = recv(csock, &msg, sizeof(struct action), 0);
-
-        if (msg.type == START)
+        int csock = accept(s, caddr, &caddrlen);
+        if (csock == -1)
         {
-            msg.type = STATE;
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    msg.board[i][j] = OCULTA;
-                }
-            }
+            logexit("accept");
         }
-        else if (msg.type == REVEAL)
+
+        // Cliente conectou
+        printf("client connected\n");
+
+        // Mensagem
+        struct action msg;
+
+        // Contador para verificar se o jogo chegou o fim
+        int cont = 16;
+
+        while (1)
         {
-            int i = msg.coordinates[0], j = msg.coordinates[1];
-            int cont = 0;
-            msg.type = WIN;
-            if (gabarito[i][j] == BOMBA)
+            memset(&msg, 0, sizeof(struct action));
+            size_t count = recv(csock, &msg, sizeof(struct action), 0);
+
+            if (msg.type == START)
             {
-                msg.type = GAME_OVER;
-                for (int k = 0; k < 4; k++)
-                {
-                    for (int l = 0; l < 4; l++)
-                    {
-                        msg.board[k][l] = gabarito[k][l];
-                    }
-                }
-            }
-            else
-            {
-                // ver se ganhou
+                msg.type = STATE;
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 0; j < 4; j++)
                     {
-                        if (msg.board[i][j] == OCULTA)
+                        msg.board[i][j] = OCULTA;
+                    }
+                }
+            }
+            else if (msg.type == REVEAL)
+            {
+                int i = msg.coordinates[0], j = msg.coordinates[1];
+                msg.type = STATE;
+                if (gabarito[i][j] == BOMBA)
+                {
+                    msg.type = GAME_OVER;
+                    for (int k = 0; k < 4; k++)
+                    {
+                        for (int l = 0; l < 4; l++)
                         {
-                            cont++;
-                            
+                            msg.board[k][l] = gabarito[k][l];
                         }
                     }
                 }
-                msg.board[i][j] = gabarito[i][j];
-            }
-        }
-        else if (msg.type == FLAG)
-        {
-            int i = msg.coordinates[0], j = msg.coordinates[1];
-            msg.type = STATE;
-            msg.board[i][j] = CEL_FLAG;
-        }
-        else if (msg.type == REMOVE_FLAG)
-        {
-            int i = msg.coordinates[0], j = msg.coordinates[1];
-            msg.type = STATE;
-            msg.board[i][j] = OCULTA;
-        }
-        else if (msg.type == RESET)
-        {
-            printf("starting new game\n");
-            msg.type = STATE;
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
+                else
                 {
-                    msg.board[i][j] = OCULTA;
+                    cont--;
+                    if (cont <= 3)
+                    {
+                        msg.type = WIN;
+                        for (int k = 0; k < 4; k++)
+                        {
+                            for (int l = 0; l < 4; l++)
+                            {
+                                msg.board[k][l] = gabarito[k][l];
+                            }
+                        }
+                    }
+                    else
+                    {
+                        msg.board[i][j] = gabarito[i][j];
+                    }
                 }
             }
-        }
-        else if (msg.type == EXIT)
-        {
-            printf("client disconnected\n");
-            close(csock);
-            break;
-        }
+            else if (msg.type == FLAG)
+            {
+                int i = msg.coordinates[0], j = msg.coordinates[1];
+                msg.type = STATE;
+                msg.board[i][j] = CEL_FLAG;
+            }
+            else if (msg.type == REMOVE_FLAG)
+            {
+                int i = msg.coordinates[0], j = msg.coordinates[1];
+                msg.type = STATE;
+                msg.board[i][j] = OCULTA;
+            }
+            else if (msg.type == RESET)
+            {
+                printf("starting new game\n");
+                msg.type = STATE;
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        msg.board[i][j] = OCULTA;
+                    }
+                }
+            }
+            else if (msg.type == EXIT)
+            {
+                printf("client disconnected\n");
+                close(csock);
+                break;
+            }
 
-        count = send(csock, &msg, sizeof(struct action), 0);
-        if (count != sizeof(struct action))
-        {
-            logexit("send");
+            count = send(csock, &msg, sizeof(struct action), 0);
+            if (count != sizeof(struct action))
+            {
+                logexit("send");
+            }
         }
+        close(csock);
     }
 
     fclose(arquivo);

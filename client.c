@@ -41,17 +41,16 @@ int main(int argc, char **argv)
 	{
 		msg.type = EXIT;
 	}
+	else
+	{
+		msg.type = ERROR;
+		exit(EXIT_FAILURE);
+	}
 
 	size_t count = send(s, &msg, sizeof(struct action), 0);
 	if (count != sizeof(struct action))
 	{
 		logexit("send");
-	}
-
-	if (msg.type == EXIT)
-	{
-		close(s);
-		return 0;
 	}
 
 	memset(&msg, 0, sizeof(struct action));
