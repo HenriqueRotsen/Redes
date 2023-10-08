@@ -1,3 +1,0 @@
-start
-reveal 0,0
-reveal 1,1

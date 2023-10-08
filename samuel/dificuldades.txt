@@ -1,4 +1,0 @@
-Entender como configurar um socket
-Os tipos de familia de protocolos disponiveis
-Problemas com a linkagen, variaveis estavam sendo declaradas dias vezes
-Difuculdades em fazer o cliente funcionar em IPv4 e IPv6

@@ -97,7 +97,6 @@ int main(int argc, char *argv[])
         while (1)
         {
             memset(&msg, 0, sizeof(struct action));
-            memset(&userboard, 0, sizeof(struct action));
             size_t count = recv(csock, &msg, sizeof(struct action), 0);
 
             if (msg.type == START)
