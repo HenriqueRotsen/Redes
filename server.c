@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
 
         // Mensagem
         struct action msg;
+        struct action clientboard;
+        memset(&clientboard, 0, sizeof(struct action));
 
         // Contador para verificar se o jogo chegou o fim
         int cont = 16;
@@ -99,27 +101,27 @@ int main(int argc, char *argv[])
 
             if (msg.type == START)
             {
-                msg.type = STATE;
+                clientboard.type = STATE;
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 0; j < 4; j++)
                     {
-                        msg.board[i][j] = OCULTA;
+                        clientboard.board[i][j] = OCULTA;
                     }
                 }
             }
             else if (msg.type == REVEAL)
             {
                 int i = msg.coordinates[0], j = msg.coordinates[1];
-                msg.type = STATE;
+                clientboard.type = STATE;
                 if (gabarito[i][j] == BOMBA)
                 {
-                    msg.type = GAME_OVER;
+                    clientboard.type = GAME_OVER;
                     for (int k = 0; k < 4; k++)
                     {
                         for (int l = 0; l < 4; l++)
                         {
-                            msg.board[k][l] = gabarito[k][l];
+                            clientboard.board[k][l] = gabarito[k][l];
                         }
                     }
                 }
@@ -128,42 +130,42 @@ int main(int argc, char *argv[])
                     cont--;
                     if (cont <= 3)
                     {
-                        msg.type = WIN;
+                        clientboard.type = WIN;
                         for (int k = 0; k < 4; k++)
                         {
                             for (int l = 0; l < 4; l++)
                             {
-                                msg.board[k][l] = gabarito[k][l];
+                                clientboard.board[k][l] = gabarito[k][l];
                             }
                         }
                     }
                     else
                     {
-                        msg.board[i][j] = gabarito[i][j];
+                        clientboard.board[i][j] = gabarito[i][j];
                     }
                 }
             }
             else if (msg.type == FLAG)
             {
                 int i = msg.coordinates[0], j = msg.coordinates[1];
-                msg.type = STATE;
-                msg.board[i][j] = CEL_FLAG;
+                clientboard.type = STATE;
+                clientboard.board[i][j] = CEL_FLAG;
             }
             else if (msg.type == REMOVE_FLAG)
             {
                 int i = msg.coordinates[0], j = msg.coordinates[1];
-                msg.type = STATE;
-                msg.board[i][j] = OCULTA;
+                clientboard.type = STATE;
+                clientboard.board[i][j] = OCULTA;
             }
             else if (msg.type == RESET)
             {
                 printf("starting new game\n");
-                msg.type = STATE;
+                clientboard.type = STATE;
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 0; j < 4; j++)
                     {
-                        msg.board[i][j] = OCULTA;
+                        clientboard.board[i][j] = OCULTA;
                     }
                 }
             }
@@ -174,7 +176,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            count = send(csock, &msg, sizeof(struct action), 0);
+            count = send(csock, &clientboard, sizeof(struct action), 0);
             if (count != sizeof(struct action))
             {
                 logexit("send");

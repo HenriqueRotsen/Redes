@@ -1,0 +1,7 @@
+start
+reveal 0,0
+reveal 0,1
+reveal 1,0
+flag 1,1
+remove_flag 1,1
+exit
