@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes",
-      "program": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/build/Debug/outDebug",
+      "cwd": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/src",
+      "program": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

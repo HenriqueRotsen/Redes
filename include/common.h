@@ -20,7 +20,6 @@
 #define WIN 6
 #define EXIT 7
 #define GAME_OVER 8
-#define ERROR 9
 
 struct action
 {

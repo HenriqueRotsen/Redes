@@ -172,7 +172,6 @@ int main(int argc, char *argv[])
             else if (msg.type == EXIT)
             {
                 printf("client disconnected\n");
-                close(csock);
                 break;
             }
 
