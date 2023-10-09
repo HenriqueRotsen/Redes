@@ -70,46 +70,24 @@ int main(int argc, char **argv)
 			{
 				break;
 			}
-
 			// Vê se ganhou
 			if (msg.type == WIN)
 			{
 				printf("YOU WIN!\n");
-				// Mostre o jogo atualizado
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						printf("%c\t\t", convert(msg.board[i][j]));
-					}
-					printf("\n");
-				}
 			}
 			// Vê se perdeu
-			else if (msg.type == GAME_OVER)
+			if (msg.type == GAME_OVER)
 			{
 				printf("GAME OVER!\n");
-				// Mostre o jogo atualizado
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						printf("%c\t\t", convert(msg.board[i][j]));
-					}
-					printf("\n");
-				}
 			}
-			else
+			// Mostre o jogo atualizado
+			for (int i = 0; i < 4; i++)
 			{
-				// Mostre o jogo atualizado
-				for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 4; j++)
 				{
-					for (int j = 0; j < 4; j++)
-					{
-						printf("%c\t\t", convert(msg.board[i][j]));
-					}
-					printf("\n");
+					printf("%c\t\t", convert(msg.board[i][j]));
 				}
+				printf("\n");
 			}
 		}
 
