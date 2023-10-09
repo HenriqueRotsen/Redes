@@ -7,8 +7,6 @@ OBJ_FOLDER = obj
 SRC_FOLDER = src
 CXXFLAGS = -Wall -c -I$(INC_FOLDER)
 
-#especificar qual versão do compilador utilizar
-
 SERVER_OBJS = $(OBJ_FOLDER)/common.o $(OBJ_FOLDER)/server.o
 CLIENT_OBJS = $(OBJ_FOLDER)/common.o $(OBJ_FOLDER)/client.o
 HDRS = $(wildcard $(INC_FOLDER)/*.h)
