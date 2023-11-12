@@ -41,28 +41,37 @@ int main(int argc, char **argv)
 		logexit("send");
 	}
 
-	memset(&operation, 0, sizeof(struct BlogOperation));
-
 	char aux[2048];
 	while (1)
 	{
-		// Não recebe nada se tiver ocorrido erro
-		count = recv(s, &operation, sizeof(struct BlogOperation), 0);
+		memset(&operation, 0, sizeof(struct BlogOperation));
+		recv(s, &operation, sizeof(struct BlogOperation), 0);
 
 		// Vê as próximas ações do cliente
 		memset(&aux, 0, 2048);
 		scanf("%s", aux);
 
-		if (strcmp(aux, "publish in frases") == 0)
+		if (strcmp(aux, "publish") == 0)
 		{
-			operation.operation_type == NEW_POST;
+			operation.operation_type = NEW_POST;
 			operation.server_response = 0;
-			strcpy(aux, operation.topic);
 
+			// Descarta o "in"
 			memset(&aux, 0, 2048);
 			scanf("%s", aux);
 
-			strcpy(aux, operation.content);
+			memset(&aux, 0, 2048);
+			scanf("%s", aux);
+			strcpy(operation.topic, aux);
+
+			// Descarta o \n
+			memset(&aux, 0, 2048);
+			fgets(aux, sizeof(aux), stdin);
+			
+			memset(&aux, 0, 2048);
+			fgets(aux, sizeof(aux), stdin);
+			strcpy(operation.content, aux);
+
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
 			if (count != sizeof(struct BlogOperation))
 			{
@@ -71,14 +80,14 @@ int main(int argc, char **argv)
 		}
 		else if (strcmp(aux, "subscribe") == 0)
 		{
-			operation.operation_type == TOPIC_SUBSCRIPTION;
+			operation.operation_type = TOPIC_SUBSCRIPTION;
 			operation.server_response = 0;
-			strcpy(aux, operation.topic);
 
 			memset(&aux, 0, 2048);
 			scanf("%s", aux);
+			strcpy(operation.topic, aux);
+			strcpy(operation.content, "");
 
-			strcpy(aux, operation.content);
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
 			if (count != sizeof(struct BlogOperation))
 			{
@@ -87,25 +96,26 @@ int main(int argc, char **argv)
 		}
 		else if (strcmp(aux, "unsubscribe") == 0)
 		{
-			operation.operation_type == TOPIC_UNSUBSCRIBE;
+			operation.operation_type = TOPIC_UNSUBSCRIBE;
 			operation.server_response = 0;
-			strcpy(aux, operation.topic);
 
 			memset(&aux, 0, 2048);
 			scanf("%s", aux);
+			strcpy(aux, operation.topic);
+			strcpy(operation.content, "");
 
-			strcpy(aux, operation.content);
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
 			if (count != sizeof(struct BlogOperation))
 			{
 				logexit("send");
 			}
 		}
-		else if (strcmp(aux, "list topics") == 0)
+		else if (strcmp(aux, "list") == 0)
 		{
-			operation.operation_type == LIST_TOPICS;
+			operation.operation_type = LIST_TOPICS;
 			operation.server_response = 0;
-			strcpy(aux, operation.topic);
+			strcpy(operation.topic, "");
+			strcpy(operation.content, "");
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
 			if (count != sizeof(struct BlogOperation))
 			{
@@ -114,9 +124,10 @@ int main(int argc, char **argv)
 		}
 		else if (strcmp(aux, "exit") == 0)
 		{
-			operation.operation_type == DISCONECT;
+			operation.operation_type = DISCONECT;
 			operation.server_response = 0;
-			strcpy(aux, operation.topic);
+			strcpy(operation.topic, "");
+			strcpy(operation.content, "");
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
 			if (count != sizeof(struct BlogOperation))
 			{

@@ -2,6 +2,52 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Server",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/server-mt",
+      "args": [
+        "v4",
+        "5151"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug Client",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/client",
+      "args": [
+        "127.0.0.1",
+        "5151"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
