@@ -45,13 +45,14 @@ int get_csock(int client_id)
     return 0;
 }
 
-int define_id()
+int define_id(int csock)
 {
     for (int i = 0; i < 10; i++)
     {
         if (clients[i].client_id == -1)
         {
             clients[i].client_id = i + 1;
+            clients[i].csock = csock;
             return i + 1;
         }
     }
@@ -110,11 +111,11 @@ void *client_thread(void *data)
         memset(&operation, 0, sizeof(struct BlogOperation));
         size_t count = recv(cdata->csock, &operation, sizeof(struct BlogOperation), 0);
 
-        debugLog(operation);
+        //debugLog(operation);
 
         if (operation.operation_type == NEW_CONECTION)
         {
-            operation.client_id = define_id();
+            operation.client_id = define_id(cdata->csock);
             operation.operation_type = NEW_CONECTION;
             operation.server_response = 1;
             strcpy(operation.topic, "");
@@ -152,6 +153,7 @@ void *client_thread(void *data)
                     if (topic->clients_id[i] == -1)
                     {
                         topic->clients_id[i] = operation.client_id;
+                        printf("client %d subscribed to %s\n", operation.client_id, operation.topic);
                         break;
                     }
                 }
@@ -225,6 +227,8 @@ void *client_thread(void *data)
                 }
             }
 
+            printf("new post added in %s by %d\n", operation.topic, operation.client_id);
+
             // Enviar mensagem para todos os clientes incritos
             int aux_csock;
             for (int i = 0; i < num_clients_subs; i++)
@@ -294,6 +298,9 @@ void *client_thread(void *data)
                     break;
                 }
             }
+            
+            printf("client %d disconnected\n", operation.client_id);
+
             close(cdata->csock);
             pthread_exit(EXIT_SUCCESS);
         }

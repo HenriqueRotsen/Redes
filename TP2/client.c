@@ -133,8 +133,9 @@ int main(int argc, char **argv)
 			{
 				logexit("send");
 			}
+			close(s);
+			exit(EXIT_SUCCESS);
 		}
 	}
-	close(s);
-	exit(EXIT_SUCCESS);
+	exit(EXIT_FAILURE);
 }
