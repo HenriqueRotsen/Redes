@@ -131,6 +131,7 @@ void *client_thread(void *data)
         }
         else if (operation.operation_type == TOPIC_SUBSCRIPTION)
         {
+            strcpy(operation.content, "");
             operation.server_response = 1;
             struct Topics *topic = topic_search(operation.topic);
 
@@ -142,7 +143,7 @@ void *client_thread(void *data)
                 if (topic->clients_id[i] == operation.client_id)
                 {
                     sub = 1;
-                    strcpy(operation.content, "error: already subscribed");
+                    strcpy(operation.content, "error: already subscribed\n");
                     break;
                 }
             }
@@ -211,7 +212,6 @@ void *client_thread(void *data)
                 if (topic->clients_id[i] == operation.client_id)
                 {
                     sub = 1;
-                    strcpy(operation.content, "error: already subscribed");
                     break;
                 }
             }
@@ -227,7 +227,8 @@ void *client_thread(void *data)
                 }
             }
 
-            printf("new post added in %s by %d\n", operation.topic, operation.client_id);
+            printf("new post added in %s by %02d\n", operation.topic, operation.client_id);
+            printf("%s\n", operation.content);
 
             // Enviar mensagem para todos os clientes incritos
             int aux_csock;
