@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+pthread_mutex_t mutex;
+
 struct Topics
 {
     char topic[50];
@@ -35,37 +37,46 @@ struct client_data
 
 int get_csock(int client_id)
 {
+    pthread_mutex_lock(&mutex);
     for (int i = 0; i < 10; i++)
     {
         if (client_id == clients[i].client_id)
         {
+            pthread_mutex_unlock(&mutex);
             return clients[i].csock;
         }
     }
+    pthread_mutex_unlock(&mutex);
     return 0;
 }
 
 int define_id(int csock)
 {
+    pthread_mutex_lock(&mutex);
     for (int i = 0; i < 10; i++)
     {
         if (clients[i].client_id == -1)
         {
             clients[i].client_id = i + 1;
             clients[i].csock = csock;
+            pthread_mutex_unlock(&mutex);
             return i + 1;
         }
     }
+    pthread_mutex_unlock(&mutex);
     return -1;
 }
 
 struct Topics *topic_search(char topic_name[])
 {
+    pthread_mutex_lock(&mutex);
+
     struct Topics *ptr = list_head;
     while (ptr != NULL)
     {
         if (strcmp(ptr->topic, topic_name) == 0)
         {
+            pthread_mutex_unlock(&mutex);
             return ptr;
         }
         ptr = ptr->next;
@@ -88,18 +99,8 @@ struct Topics *topic_search(char topic_name[])
         list_tail = new_topic;
     }
 
+    pthread_mutex_unlock(&mutex);
     return new_topic;
-}
-
-void debugLog(struct BlogOperation op)
-{
-    printf("\n##############\n");
-    printf("client_id: %d\n", op.client_id);
-    printf("operation_type: %d\n", op.operation_type);
-    printf("server_response: %d\n", op.server_response);
-    printf("topic: %s\n", op.topic);
-    printf("content: %s\n", op.content);
-    printf("\n##############\n\n");
 }
 
 void *client_thread(void *data)
@@ -111,8 +112,6 @@ void *client_thread(void *data)
         memset(&operation, 0, sizeof(struct BlogOperation));
         size_t count = recv(cdata->csock, &operation, sizeof(struct BlogOperation), 0);
 
-        //debugLog(operation);
-
         if (operation.operation_type == NEW_CONECTION)
         {
             operation.client_id = define_id(cdata->csock);
@@ -121,7 +120,7 @@ void *client_thread(void *data)
             strcpy(operation.topic, "");
             strcpy(operation.content, "");
 
-            printf("client %d connected\n", operation.client_id);
+            printf("client %02d connected\n", operation.client_id);
 
             count = send(cdata->csock, &operation, sizeof(struct BlogOperation), 0);
             if (count != sizeof(struct BlogOperation))
@@ -154,7 +153,7 @@ void *client_thread(void *data)
                     if (topic->clients_id[i] == -1)
                     {
                         topic->clients_id[i] = operation.client_id;
-                        printf("client %d subscribed to %s\n", operation.client_id, operation.topic);
+                        printf("client %02d subscribed to %s\n", operation.client_id, operation.topic);
                         break;
                     }
                 }
@@ -175,6 +174,7 @@ void *client_thread(void *data)
                 if (topic->clients_id[i] == operation.client_id)
                 {
                     topic->clients_id[i] = -1;
+                    printf("client %02d unsubscribed to %s\n", operation.client_id, operation.topic);
                     break;
                 }
             }
@@ -187,22 +187,8 @@ void *client_thread(void *data)
         }
         else if (operation.operation_type == NEW_POST)
         {
-            int num_clients_subs = 0;
-            int subscribed_clients[10];
-            memset(subscribed_clients, -1, 10 * sizeof(int));
-
             operation.server_response = 1;
             struct Topics *topic = topic_search(operation.topic);
-
-            // Descobrindo todos os clientes inscritos no topico
-            for (int i = 0; i < 10; i++)
-            {
-                if (topic->clients_id[i] != -1)
-                {
-                    subscribed_clients[num_clients_subs] = topic->clients_id[i];
-                    num_clients_subs++;
-                }
-            }
 
             // Assumir que o cliente atual nao esta inscrito
             int sub = 0;
@@ -228,17 +214,19 @@ void *client_thread(void *data)
             }
 
             printf("new post added in %s by %02d\n", operation.topic, operation.client_id);
-            printf("%s\n", operation.content);
 
             // Enviar mensagem para todos os clientes incritos
             int aux_csock;
-            for (int i = 0; i < num_clients_subs; i++)
+            for (int i = 0; i < 10; i++)
             {
-                aux_csock = get_csock(subscribed_clients[i]);
-                count = send(aux_csock, &operation, sizeof(struct BlogOperation), 0);
-                if (count != sizeof(struct BlogOperation))
+                aux_csock = get_csock(topic->clients_id[i]);
+                if (aux_csock != -1 && aux_csock != cdata->csock)
                 {
-                    logexit("send");
+                    count = send(aux_csock, &operation, sizeof(struct BlogOperation), 0);
+                    if (count != sizeof(struct BlogOperation))
+                    {
+                        logexit("send");
+                    }
                 }
             }
         }
@@ -299,19 +287,20 @@ void *client_thread(void *data)
                     break;
                 }
             }
-            
-            printf("client %d disconnected\n", operation.client_id);
+
+            printf("client %02d disconnected\n", operation.client_id);
 
             close(cdata->csock);
             pthread_exit(EXIT_SUCCESS);
         }
     }
-    pthread_exit((void*)EXIT_FAILURE);
+    pthread_exit((void *)EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[])
 {
 
+    pthread_mutex_init(&mutex, NULL);
     struct sockaddr_storage storage;
     server_sockaddr_init(argv[1], argv[2], &storage);
 

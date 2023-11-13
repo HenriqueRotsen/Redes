@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
 			memset(&aux, 0, 2048);
 			scanf("%s", aux);
-			strcpy(aux, operation.topic);
+			strcpy(operation.topic, aux);
 			strcpy(operation.content, "");
 
 			size_t count = send(s, &operation, sizeof(struct BlogOperation), 0);
