@@ -283,7 +283,7 @@ void *client_thread(void *data)
                 if (clients[i].client_id == operation.client_id)
                 {
                     clients[i].client_id = -1;
-                    clients[i].csock = 0;
+                    clients[i].csock = -1;
                     break;
                 }
             }
