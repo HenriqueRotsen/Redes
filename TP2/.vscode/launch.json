@@ -54,8 +54,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/TP2",
-      "program": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/TP2/build/Debug/outDebug",
+      "cwd": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/TP2/src",
+      "program": "/home/hrsf/Henrique/UFMG/7_Semestre/Redes/TP2/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
